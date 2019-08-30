@@ -20,7 +20,7 @@ struct MeshBuilder
 
 };
 
-void BuildLabirintMesh(MeshBuilder & mb, Map& map, float StartX, float StartY, float Depth );
+void BuildLabirintMesh(MeshBuilder & mb, Map& map, float StartX, float StartY );
 
 
 #endif /* LABMESH_H_ */

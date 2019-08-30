@@ -23,7 +23,7 @@ Phys * phys;
 
 void Frame()
 {
-   glClear(GL_COLOR_BUFFER_BIT);
+  
    if (phys->isUpdate())
    {
          RouteItem ri = router->getRouteItem();
@@ -109,27 +109,11 @@ void MainLoop()
 
 int main(int argc, char *argv[])
 {
-	int cells[]=
-	{
-			0,0,0,0,0,0,0,
-			0,3,1,0,1,1,2,
-			0,2,3,1,1,2,2,
-			0,2,0,1,0,0,2,
-			0,2,2,1,0,2,2,
-			0,2,1,1,1,0,2,
-			0,1,1,0,1,1,0
-	};
-
-
-
-	map_buffer_desc mpd;
-	mpd.width = 7;
-	mpd.height = 7;
-	mpd.pData = cells;
-
+	
 	Map map;
 
-    map.LoadFromMemory(mpd);
+    if (!map.LoadFromFile("Data/map"))
+       return false;
 
     router =new RandomRouter(0,0,EAST) ;
     if (!router->Create(map)) {
@@ -138,10 +122,7 @@ int main(int argc, char *argv[])
     }
 
     phys = new Phys(1.5f,1.5f, EAST);
-
-
-	std::cout << "Test Cube" << std::endl;
-	r = new renderer();
+r = new renderer();
    if (!InitGL())
      return -1;
    r->init(map);

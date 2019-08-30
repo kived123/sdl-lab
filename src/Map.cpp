@@ -1,3 +1,7 @@
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <string>
 #include "Map.h"
 
 
@@ -8,6 +12,61 @@ Map::Map():cells(0),width(-1),height(-1), dir(WEST)
 {
   for (int i=0; i<4; i++)
     walls[i] = false;
+}
+
+bool Map::LoadFromFile(const char * path)
+{
+   std::ifstream file(path);
+
+   map_buffer_desc mbd;
+  
+  
+   std::string str;         
+   int m=0;
+   std::vector<int> data;
+   while(getline(file,str)) {
+     switch(m){
+       case 0:mbd.width = atoi(str.c_str());break;
+       case 1:mbd.height = atoi(str.c_str());break;	
+       default:
+         for (char c : str){
+           if (c>='0' && c<='3') {
+              data.push_back(c-'0'); 
+            } else {
+              std::cout << "invalid char" << c  << std::endl;
+	      return false;
+            }
+             
+           
+           
+         }
+    }    
+    if (m<2) m++;
+   }
+   if (m<2){
+       std::cout << "Reading map failed"  << std::endl;
+       return false;
+   }	
+
+   int size = data.size();
+   int exp_size = mbd.width*mbd.height;
+   if (size!=exp_size) {
+       std::cout << "Expected " << exp_size << " elemets, giving "<< size << std::endl;
+       return false;       
+   }
+
+   
+
+   std::cout << "map width" << mbd.width << std::endl;
+   std::cout << "map height" << mbd.height << std::endl;
+   for (int x:data) {
+      std::cout << x  << " ";
+   }
+   std::cout << std::endl;
+   mbd.pData = &data[0];
+
+
+   return LoadFromMemory(mbd); 
 }
 
 bool Map::LoadFromMemory(const map_buffer_desc& mbd)

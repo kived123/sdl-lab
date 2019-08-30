@@ -1,15 +1,8 @@
-/*
- * LabMesh.cpp
- *
- *  Created on: 16 авг. 2017 г.
- *      Author: kived
- */
-
 #include "LabMesh.h"
 
-static void north_wall(MeshBuilder & mb, float x, float y,float z, float Depth);
-static void west_wall(MeshBuilder & mb, float x, float y,float z, float Depth);
-static void floor(MeshBuilder & mb, float x, float y,float z, float Depth);
+static void vertical_wall(MeshBuilder & mb, float x, float y, int len);
+static void horizontal_wall(MeshBuilder & mb, float x, float y, int len);
+
 
 void MeshBuilder::addVertex(float x, float y, float z, float u, float v)
 {
@@ -21,125 +14,139 @@ void MeshBuilder::addVertex(float x, float y, float z, float u, float v)
 	vertices.push_back(v);
 }
 
-void BuildLabirintMesh(MeshBuilder & mb, Map& map, float StartX, float StartY, float Depth )
+void BuildLabirintMesh(MeshBuilder & mb, Map& map, float StartX, float StartY )
 {
+	
+	float WallX, WallY;
+	int len;
+
 	float x=StartX;
-	float y=StartY;
-	float z=-0.5f*Depth;
+	float y=StartY+CELL_SIDE;
 
+	// горизотнальные стены
 
-	for(int j=0; j<map.Height();j++) {
-		for (int i=0; i<map.Width();i++) {
+	for(int j=1; j<map.Height();j++)       {
+		len =0;		
+		for (int i=0; i<map.Width();i++) 	{
 			map.MoveTo(i,j);
-
-
-	       if (map.Wall(NORTH)){
-	    	   north_wall(mb,x,y,z,Depth);
-	       }
-
-
-	       if (map.Wall(WEST)){
-	    	   west_wall(mb,x,y,z,Depth);
-	       }
-
-	       floor(mb,x,y,z,0.0f);
-
-	       x+=CELL_SIDE;
+      			if (map.Wall(NORTH)) {
+				if (len==0) { 	
+					//сохраняем 
+					WallX=x;	
+					WallY=y;
+				}		
+				len++; 	
+			} else {
+				if (len>0) {
+					horizontal_wall(mb,WallX,WallY,len);
+					len =0;
+				}				
+			}
+			x+=CELL_SIDE;
+		}		
+		
+		//добавляем остаток (если есть)
+		if (len>0) {
+			horizontal_wall(mb,WallX,WallY,len);
 		}
+
+				
+		
 		x=StartX;
 		y+=CELL_SIDE;
 	}
+	
+	// вертикальные стены
 
-	x=StartX;
-
-	y=StartY+map.Height() * CELL_SIDE;
-
-	for (int i=0; i<map.Width(); i++){
-		north_wall(mb,x,y,z,Depth);
-		x+=CELL_SIDE;
-	}
-
-
-	x=StartX + map.Width() * CELL_SIDE;
+	x=StartX + CELL_SIDE;
 	y=StartY;
+	for(int j=1; j<map.Width();j++)       {
+		len =0;		
+		for (int i=0; i<map.Height();i++) 	{
+			map.MoveTo(j,i);
+      			if (map.Wall(WEST)) {
+				if (len==0) { 	
+					//сохраняем 
+					WallX=x;	
+					WallY=y;
+				}		
+				len++; 	
+			} else {
+				if (len>0) {
+					vertical_wall(mb,WallX,WallY,len);
+					len =0;
+				}				
+			}
+			y+=CELL_SIDE;
+		}		
+		
+		//добавляем остаток (если есть)
+		if (len>0) {
+			vertical_wall(mb,WallX,WallY,len);
+		}
 
-	for (int i=0; i<map.Height(); i++){
-		west_wall(mb,x,y,z,Depth);
-		y+=CELL_SIDE;
-	}
+				
+		
+		y=StartY;
+		x+=CELL_SIDE;
+	}	
+
+	
+	//коробка
+	float w = map.Width() * CELL_SIDE;
+	float h = map.Height() * CELL_SIDE;
+	
+	//стены
+
+	horizontal_wall(mb,StartX,StartY,map.Width());
+	horizontal_wall(mb,StartX,StartY+h,map.Width());
+
+	vertical_wall(mb,StartX, StartY,map.Height());
+	vertical_wall(mb,StartX+w,StartY,map.Height());
+
+	// пол
+
+	float d = CELL_SIDE / 2.0f;
+
+	mb.addVertex(StartX,-d,StartY+h,0.0f,0.0f);
+ 	mb.addVertex(StartX,-d,StartY, 0.0f,map.Height());
+	mb.addVertex(StartX+w,-d,StartY,map.Width(),map.Height());
+
+	mb.addVertex(StartX,-d,StartY+h,0.0f,0.0f);
+	mb.addVertex(StartX+w,-d,StartY,map.Width(),map.Height());
+	mb.addVertex(StartX+w,-d,StartY+h,map.Width(),0.0f);	
 }
 
-static void floor(MeshBuilder & mb, float x, float y,float z, float Depth)
-
+void vertical_wall(MeshBuilder & mb, float x, float y, int len)
 {
-     /*glBegin(GL_QUADS);
-     glVertex3f(x,z+Depth_,y);
-     glVertex3f(x, z+Depth_, y+CELL_SIDE);
-     glVertex3f(x+CELL_SIDE,z+Depth_, y+CELL_SIDE);
-     glVertex3f(x+CELL_SIDE, z+Depth_, y);
+	float l = len * CELL_SIDE;
+	float d = CELL_SIDE / 2.0f;
 
-     glEnd();*/
-	mb.addVertex(x, z+Depth, y+CELL_SIDE, 0.5f, 1.0f);
-    mb.addVertex(x, z+Depth, y, 0.5f, 0.5f);
-	mb.addVertex(x+CELL_SIDE,z+Depth,y+CELL_SIDE, 1.0f, 1.0f);
+	mb.addVertex(x,-d,y,len,1.0f);
+	mb.addVertex(x,d,y, len,0.0f);
+	mb.addVertex(x,d,y+l,0.0f,0.0f);
 
-	mb.addVertex(x+CELL_SIDE,z+Depth,y+CELL_SIDE, 1.0f, 1.0f);
-	mb.addVertex(x, z+Depth, y, 0.5f, 0.5f);
-	mb.addVertex(x+CELL_SIDE,z+Depth,y,1.0f, 0.5f);
+	
+	mb.addVertex(x,-d,y,len,1.0f);
+	mb.addVertex(x,d,y+l,0.0f,0.0f);	 
+	mb.addVertex(x,-d,y+l,0.0f,1.0f);
+
 }
 
 
-
-static void north_wall(MeshBuilder & mb, float x, float y,float z, float Depth)
+void horizontal_wall(MeshBuilder & mb, float x, float y, int len)
 {
-	mb.addVertex(x, z+Depth, y, 0.5f, 0.0f);
-	mb.addVertex(x, z, y, 0.5f, 0.5f);
-	mb.addVertex(x+CELL_SIDE,z+Depth,y, 0.0f, 0.0f);
+	float l = len * CELL_SIDE;
+	float d = CELL_SIDE / 2.0f;
 
-	mb.addVertex(x+CELL_SIDE,z+Depth,y, 0.0f, 0.0f);
-	mb.addVertex(x, z, y, 0.5f, 0.5f);
-	mb.addVertex(x+CELL_SIDE,z,y,0.0f, 0.5f);
+	
+	mb.addVertex(x,-d,y,len,1.0f);	
+	mb.addVertex(x,d,y, len,0.0f);	
+	mb.addVertex(x+l,d,y,0.0f,0.0f);
+
+	
+	mb.addVertex(x,-d,y,len,1.0f);	
+	mb.addVertex(x+l,d,y,0.0f,0.0f);
+	mb.addVertex(x+l,-d,y,0.0f,1.0f); 
 }
 
-/*
- *
- *
- *          (y,z)     (y+CELL_SIDE,z)
-                 ++++++
-                 +*   +
-                 + *  +
-                 +  * +
-                 ++++++
-            (y,z+Depth)     (y+CELL_SIDE,z+Depth)
-
-            в данном представление
-
-            1) (y,z+Depth), (y,z), (y+CELL_SIDE,z+Depth)
-            2) (y+CELL_SIDE,z+Depth), (y,z), (y+CELL_SIDE,z)
-
-            в реальности
-            1)
-            (x, z+Depth,y)
-            (x,z,y),
-            (x,z+Depth, y+CELL_SIDE)
-            2) (x,z+Depth, y+CELL_SIDE)
-             (x,z,y),
-             (x,z,y+CELL_SIDE)
-
- *
- */
-
-
-static void west_wall(MeshBuilder & mb, float x, float y,float z, float Depth)
-{
-
-
-	mb.addVertex(x, z+Depth,y, 0.5f, 0.0f);
-	mb.addVertex(x, z, y, 0.5f, 0.5f);
-	mb.addVertex(x,z+Depth, y+CELL_SIDE, 0.0f, 0.0f);
-
-	mb.addVertex(x,z+Depth, y+CELL_SIDE, 0.0f, 0.0f);
-	mb.addVertex(x, z, y, 0.5f, 0.5f);
-	mb.addVertex(x,z,y+CELL_SIDE,0.0f, 0.5f);
-
-}

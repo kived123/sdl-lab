@@ -1,7 +1,7 @@
 #ifndef _MAP_H_
 #define _MAP_H_
 
-#include <string>
+
 #include "Direction.h"
 #include "Common.h"
 
@@ -10,10 +10,7 @@ class Map
 public:
     Map();
     bool LoadFromMemory(const map_buffer_desc& mbd);
-    bool LoadFromFile(const std::string& fname){
-       /*UNIMPLEMENT*/
-       return false;
-    }
+    bool LoadFromFile(const char * path);
 
 
     bool MoveTo(int x, int y);

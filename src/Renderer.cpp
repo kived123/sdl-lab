@@ -14,6 +14,8 @@
 #include "LabMesh.h"
 
 
+
+
 using namespace std;
 
 
@@ -44,11 +46,32 @@ const char * fragment_shader =
 				"  color = texture(ourTexture, Texcoord);"
 				"}";
 
+void renderer::loadTex(const char * path, unsigned int id) {
+	int width, height;
+	unsigned char* image;
+	
+	glBindTexture(GL_TEXTURE_2D, id);
+	image = SOIL_load_image(path, &width, &height, 0, SOIL_LOAD_RGB);
+	cout << (void*)image << endl;
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+		              GL_UNSIGNED_BYTE, image);
+	SOIL_free_image_data(image);
 
+
+    	glGenerateMipmap(GL_TEXTURE_2D);
+
+
+    	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   
+}
 
 void renderer::init(Map &m)
 {
-	glClearColor(0.0f,0.0f,1.0f,0.0f);
+
+	glClearColor(0.0f,0.0f,0.0f,0.0f);
 
 
 	glGenVertexArrays(1, &vao);
@@ -61,7 +84,7 @@ void renderer::init(Map &m)
 
 	MeshBuilder mb;
 
-	BuildLabirintMesh(mb, m, 0.0f,0.0f,3.0f);
+	BuildLabirintMesh(mb, m, 0.0f,0.0f);
 	int size = mb.vertices.size();
 
 	VerticesCount = size/5;
@@ -86,12 +109,12 @@ void renderer::init(Map &m)
 	GLuint vs,fs;
 
 
-    vs = glCreateShader( GL_VERTEX_SHADER );
+    	vs = glCreateShader( GL_VERTEX_SHADER );
 	fs = glCreateShader( GL_FRAGMENT_SHADER );
 
 
 	glShaderSource( vs, 1, &vertex_shader, NULL);
-    glShaderSource( fs, 1, &fragment_shader, NULL);
+ 	glShaderSource( fs, 1, &fragment_shader, NULL);
 
 
 
@@ -112,25 +135,19 @@ void renderer::init(Map &m)
 	glUseProgram(prg);
 
 
-	int width, height;
-	unsigned char* image;
+	
 
-	glGenTextures(1, &texture);
+	unsigned int texids[2];
 
+	glGenTextures(2, texids);
 
-	glBindTexture(GL_TEXTURE_2D, texture);
-	image = SOIL_load_image("Data/tex.png", &width, &height, 0, SOIL_LOAD_RGB);
-	cout << (void*)image << endl;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-		              GL_UNSIGNED_BYTE, image);
-	SOIL_free_image_data(image);
+	cout << "texids = " << texids[0] << "," << texids[1] << endl;
 
-
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // We want to repeat this pattern so we set kept it at GL_REPEAT
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   // We want to repeat this pattern so we set kept it at GL_REPEAT
+	texWall = texids[0];
+	texFloor = texids[1];
+	
+	loadTex("Data/wall.png",texWall);
+	loadTex("Data/floor.png",texFloor);	
 
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -153,6 +170,8 @@ void renderer::frame()
 					glm::vec3(AtX,0.0f,AtY),
 					glm::vec3(0.0f,1.0f,0.0f));
 
+		
+
 
 		glm::mat4 MVP = proj*view;
 
@@ -162,11 +181,15 @@ void renderer::frame()
 
 		glClear ( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glActiveTexture(GL_TEXTURE0);
-	    glBindTexture(GL_TEXTURE_2D, texture);
+	    glBindTexture(GL_TEXTURE_2D, texWall);
 	    glUniform1i(TexLoc, 0);
 
 
 		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
+		glDrawArrays(GL_TRIANGLES, 0, VerticesCount-6);
+		//Draw floor
+		glBindTexture(GL_TEXTURE_2D, texFloor);
+		glDrawArrays(GL_TRIANGLES, VerticesCount-6,6);
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 }

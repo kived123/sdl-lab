@@ -16,7 +16,7 @@
 class renderer
 {
 public:
-	renderer():texture(0),MVPLoc(0),
+	renderer():texWall(0),texFloor(0),MVPLoc(0),
 	vao(0),
 	VerticesCount(0),
 	TexLoc(0),
@@ -40,15 +40,15 @@ public:
 
 	void frame();
 private:
-	unsigned int texture;
+	unsigned int texWall;
+	unsigned int texFloor;
 	unsigned int MVPLoc;
 	unsigned int vao;
 	int VerticesCount;
 	unsigned int TexLoc;
-
-
 	float PosX, PosY;
 	float AtX, AtY;
+	void loadTex(const char * path, unsigned int id);
 };
 
 
